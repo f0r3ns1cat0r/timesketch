@@ -52,8 +52,9 @@ class AggregationResource(resources.ResourceMixin, Resource):
         Handler for /api/v1/sketches/:sketch_id/aggregation/:aggregation_id
 
         Args:
-            sketch_id: Integer primary key for a sketch database model
-            aggregation_id: Integer primary key for an agregation database model
+            sketch_id: Integer primary key for a sketch database model.
+            aggregation_id: Integer primary key for an aggregation database
+                model.
 
         Returns:
             JSON with aggregation results
@@ -480,6 +481,10 @@ class AggregationExploreResource(resources.ResourceMixin, Resource):
             indices = aggregator_parameters.pop('index', sketch_indices)
             indices, timeline_ids = lib_utils.get_validated_indices(
                 indices, sketch)
+
+            if not (indices or timeline_ids):
+                abort(
+                    HTTP_STATUS_CODE_BAD_REQUEST, 'No indices to aggregate on')
 
             aggregator = agg_class(
                 sketch_id=sketch_id, indices=indices,

@@ -2,13 +2,13 @@
 from __future__ import unicode_literals
 
 import logging
-import re
 
 import six
 
 from timesketch.lib import emojis
 from timesketch.lib.analyzers import interface
 from timesketch.lib.analyzers import manager
+from timesketch.lib.analyzers import utils
 
 
 logger = logging.getLogger('timesketch.analyzers.feature')
@@ -22,8 +22,8 @@ RE_FLAGS = [
 ]
 
 
-class FeatureExtractionSketchPlugin(interface.BaseSketchAnalyzer):
-    """Sketch analyzer for FeatureExtraction."""
+class FeatureExtractionSketchPlugin(interface.BaseAnalyzer):
+    """Analyzer for FeatureExtraction."""
 
     NAME = 'feature_extraction'
     DISPLAY_NAME = 'Feature extractor'
@@ -192,10 +192,10 @@ class FeatureExtractionSketchPlugin(interface.BaseSketchAnalyzer):
         Args:
             current_val: current value of store_as.
             extracted_value: values matched from regexp (type list).
-            keep_multi: choise if you keep all match from regex (type boolean).
-            merge_values: choise if you merge value from extracted
+            keep_multi: choice if you keep all match from regex (type boolean).
+            merge_values: choice if you merge value from extracted
                  and current (type boolean).
-            type_list: choise if you store values in list type(type boolean).
+            type_list: choice if you store values in list type(type boolean).
 
         Returns:
             Value to store
@@ -259,31 +259,13 @@ class FeatureExtractionSketchPlugin(interface.BaseSketchAnalyzer):
         tags = config.get('tags', [])
 
         expression_string = config.get('re')
-        expression_flags = config.get('re_flags')
         if not expression_string:
             logger.warning('No regular expression defined.')
             return ''
 
-        if expression_flags:
-            flags = set()
-            for flag in expression_flags:
-                try:
-                    flags.add(getattr(re, flag))
-                except AttributeError:
-                    logger.warning('Unknown regular expression flag defined.')
-                    return ''
-            re_flag = sum(flags)
-        else:
-            re_flag = 0
-
-        try:
-            expression = re.compile(expression_string, flags=re_flag)
-        except re.error as exception:
-            # pylint: disable=logging-format-interpolation
-            logger.warning((
-                'Regular expression failed to compile, with '
-                'error: {0!s}').format(exception))
-            return ''
+        expression = utils.compile_regular_expression(
+            expression_string=expression_string,
+            expression_flags=config.get('re_flags'))
 
         emoji_names = config.get('emojis', [])
         emojis_to_add = [emojis.get_emoji(x) for x in emoji_names]
